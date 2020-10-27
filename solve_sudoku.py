@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import copy
 from utils import get_sudoku_from_csv, BLOCK_KEY_VALUE, PLOT_DIGIT_SPACES, BLOCK_NUMBER_OFFSET
 
 
@@ -14,7 +15,15 @@ def get_state_space(sudoku):
                 temp_row.append(IntersectionalState())
         state_space.append(temp_row)
 
+    update_state_space(sudoku, state_space)
+    state_space_to_sudoku(state_space, sudoku)
+
     return state_space
+
+
+def update_sudoku(sudoku, row, column, value):
+    sudoku[row][column] = value
+    print(f'==== ({row},{column}): {value}')
 
 
 def _get_column(nine_by_nine, col_number):
@@ -38,17 +47,11 @@ def _get_block(sudoku, block_number):
     return block
 
 
-def state_space_to_sudoku(state_space, sudoku, verbose=False):
+def state_space_to_sudoku(state_space, sudoku):
     for row in range(9):
         for col in range(9):
-            prefix = f'==== ({row},{col})'
-            # if state_space[row][col].solved:
-            #     print('Solved!', sudoku[row][col])
             if 1 == len(state_space[row][col].get_intersection()):
-                print(f'{prefix} Update Sudoku with {state_space[row][col]}')
-                sudoku[row][col] = str(state_space[row][col].get_intersection().pop())
-            elif verbose:
-                print(f'{prefix} {state_space[row][col]}')
+                update_sudoku(sudoku, row, col, str(state_space[row][col].get_intersection().pop()))
 
 
 def update_state_space(sudoku, state_space):
@@ -85,7 +88,13 @@ class SpatialAware:
     def __str__(self):
         temp_str = str(self.digit) + '\n'
         for row in self.bool_position:
-            temp_str += str(row) + '\n'
+            temp_row = ''
+            for item in row:
+                if item:
+                    temp_row += ' X'
+                else:
+                    temp_row += ' .'
+            temp_str += temp_row + '\n'
         return temp_str
 
     def update_spaw_row(self, sudoku):
@@ -123,24 +132,33 @@ class SpatialAware:
                 if sudoku[row][col]:
                     self.bool_position[row][col] = False
 
-    def is_unique_in_row(self):
+    def is_unique_in_row(self, sudoku):
         i = 0
         for row in self.bool_position:
-            how_many_true = sum(row)
-            if 1 == how_many_true:
-                print(f'Digit {self.digit} is unique in row number {i}. Update sudoku!')
-            elif 2 == how_many_true:
-                print(f'Might want to check {self.digit} in row number {i}')
+            row_positions = [j for j, val in enumerate(row) if val]
+            if 1 == len(row_positions):
+                # print(f'Digit {self.digit} is unique in row number {i}. Update sudoku!')
+                update_sudoku(sudoku, i, row_positions[0], str(self.digit))
+            elif 2 == len(row_positions):
+                if BLOCK_KEY_VALUE[(i, row_positions[0])][0] == BLOCK_KEY_VALUE[(i, row_positions[1])][0]:
+                    # print(f'Row {i}, digit {self.digit} on {row_positions}')
+                    print(f'Digit {self.digit}.'
+                          f'Check block adjacent to block: {BLOCK_KEY_VALUE[(i, row_positions[0])][0]}')
             i += 1
 
-    def is_unique_in_column(self):
+    def is_unique_in_column(self, sudoku):
         for i in range(9):
             current_column = _get_column(self.bool_position, i)
-            how_many_true = sum(current_column)
-            if 1 == how_many_true:
-                print(f'Digit {self.digit} is unique in column {i}. Update sudoku!')
-            if 2 == how_many_true:
-                print(f'Might want to check {self.digit} in column {i}')
+            column_positions = [j for j, val in enumerate(current_column) if val]
+            if 1 == len(column_positions):
+                update_sudoku(sudoku, column_positions[0], i, str(self.digit))
+            if 2 == len(column_positions):
+                if BLOCK_KEY_VALUE[(column_positions[0], i)][0] == BLOCK_KEY_VALUE[(column_positions[1], i)][0]:
+                    print(f'Digit {self.digit}.'
+                          f'Check block adjacent to block: {BLOCK_KEY_VALUE[(column_positions[0], i)][0]}')
+
+    def is_unique_in_block(self, sudoku):
+        pass
 
     def check_spatial_awareness(self, sudoku):
         self.update_spaw_row(sudoku)
@@ -148,8 +166,9 @@ class SpatialAware:
         self.update_spaw_block(sudoku)
         self.check_empty(sudoku)
 
-        self.is_unique_in_row()
-        self.is_unique_in_column()
+        self.is_unique_in_row(sudoku)
+        self.is_unique_in_column(sudoku)
+        self.is_unique_in_block(sudoku)
 
 
 class IntersectionalState:
@@ -171,25 +190,33 @@ class IntersectionalState:
     def check_rows(self, s, row):
         for i in range(9):
             if s[row][i]:
-                # print(f'remove {s[row][i]} from self.row_state set')
-                self.row_state.remove(int(s[row][i]))
+                try:
+                    # print(f'remove {s[row][i]} from self.row_state set')
+                    self.row_state.remove(int(s[row][i]))
+                except KeyError:
+                    pass
 
     def check_columns(self, s, col):
         for i in range(9):
             if s[i][col]:
-                # print(f'remove {s[i][col]} from self.col_state set')
-                self.col_state.remove(int(s[i][col]))
+                try:
+                    # print(f'remove {s[i][col]} from self.col_state set')
+                    self.col_state.remove(int(s[i][col]))
+                except KeyError:
+                    pass
 
     def check_block(self, s, row, col):
-        (row_offset, col_offset) = BLOCK_KEY_VALUE[(row, col)]
-        # print('==== offsets:', row_offset, col_offset)
+        (block_number, row_offset, col_offset) = BLOCK_KEY_VALUE[(row, col)]
 
         for rr in range(3):
             for cc in range(3):
                 cvalue = s[rr + row_offset][cc + col_offset]
                 if cvalue:
-                    # print(f'remove {cvalue} from self.block_state')
-                    self.block_state.remove(int(cvalue))
+                    try:
+                        # print(f'remove {cvalue} from self.block_state')
+                        self.block_state.remove(int(cvalue))
+                    except KeyError:
+                        pass
 
 
 def print_set_as_9char_string(set_in):
@@ -238,17 +265,26 @@ def show_sudoku(sudoku):
 
 
 if __name__ == '__main__':
-    s = get_sudoku_from_csv('sudoku02.csv')
-    show_sudoku(s)
-
-    # for it in range(7):
-    #     print(f'iteration {it}')
-    #     sp = get_state_space(s)
-    #     update_state_space(s, sp)
-    #     state_space_to_sudoku(sp, s)
-    #
-    #     # show_sudoku_as_state_space(s, sp)
+    s = get_sudoku_from_csv('sudoku04.csv')
 
     sa_digit_list = get_spatial_awareness(s)
-    print(sa_digit_list[0])
+    sp = get_state_space(s)
+
+    for it in range(7):
+        orig_sudoku = copy.deepcopy(s)
+        print(f'iteration {it}')
+
+        for jj in range(9):
+            sa_digit_list[jj].check_spatial_awareness(s)
+
+        update_state_space(s, sp)
+        state_space_to_sudoku(sp, s)
+
+        if orig_sudoku == s:
+            break
+
+    show_sudoku_as_state_space(s, sp)
+
+    # for i in range(9):
+    #     print(sa_digit_list[i])
     show_sudoku(s)
