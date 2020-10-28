@@ -12,6 +12,44 @@ def get_sudoku_from_csv(file_name):
     return sudoku
 
 
+def update_sudoku(sudoku, row, column, value, state_space):
+    state_space[row][column].set_solved()
+    sudoku[row][column] = value
+    print(f'==== ({row},{column}): {value}')
+
+
+def get_block(nine_by_nine, block_number):
+    block = list()
+    row_offset, col_offset = BLOCK_NUMBER_OFFSET[block_number]
+
+    for i in range(3):
+        current_row = []
+        for j in range(3):
+            current_row.append(nine_by_nine[i + row_offset][j + col_offset])
+        block.append(current_row)
+
+    return block
+
+
+def get_column_from_nine_by_nine(nine_by_nine, col_number):
+    column = list()
+    for i in range(9):
+        column.append(nine_by_nine[i][col_number])
+
+    return column
+
+
+def print_set_as_9char_string(set_in):
+    to_print = ''
+    for i in range(1, 10):
+        if i in set_in:
+            to_print += str(i)
+        else:
+            to_print += ' '
+
+    return to_print
+
+
 BLOCK_NUMBER_OFFSET = {
     1: (0, 0),
     2: (0, 3),
