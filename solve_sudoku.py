@@ -21,7 +21,8 @@ def get_state_space(sudoku):
     return state_space
 
 
-def update_sudoku(sudoku, row, column, value):
+def update_sudoku(sudoku, row, column, value, state_space):
+    state_space[row][column].set_solved()
     sudoku[row][column] = value
     print(f'==== ({row},{column}): {value}')
 
@@ -51,7 +52,7 @@ def state_space_to_sudoku(state_space, sudoku):
     for row in range(9):
         for col in range(9):
             if 1 == len(state_space[row][col].get_intersection()):
-                update_sudoku(sudoku, row, col, str(state_space[row][col].get_intersection().pop()))
+                update_sudoku(sudoku, row, col, str(state_space[row][col].get_intersection().pop()), state_space)
 
 
 def update_state_space(sudoku, state_space):
@@ -65,10 +66,10 @@ def update_state_space(sudoku, state_space):
                 # print(state_space[row][col])
 
 
-def get_spatial_awareness(sudoku):
+def get_spatial_awareness(sudoku, state_space):
     sp_awareness = list()
     for i in range(1, 10):
-        sp_awareness.append(SpatialAware(i))
+        sp_awareness.append(SpatialAware(i, state_space))
 
     # for item in sp_awareness:
     #     print('====')
@@ -81,7 +82,8 @@ def get_spatial_awareness(sudoku):
 
 
 class SpatialAware:
-    def __init__(self, digit):
+    def __init__(self, digit, sp):
+        SpatialAware.state_space = sp
         self.digit = digit
         self.bool_position = [[True for i in range(9)] for j in range(9)]
 
@@ -138,7 +140,7 @@ class SpatialAware:
             row_positions = [j for j, val in enumerate(row) if val]
             if 1 == len(row_positions):
                 # print(f'Digit {self.digit} is unique in row number {i}. Update sudoku!')
-                update_sudoku(sudoku, i, row_positions[0], str(self.digit))
+                update_sudoku(sudoku, i, row_positions[0], str(self.digit), SpatialAware.state_space)
             elif 2 == len(row_positions):
                 if BLOCK_KEY_VALUE[(i, row_positions[0])][0] == BLOCK_KEY_VALUE[(i, row_positions[1])][0]:
                     # print(f'Row {i}, digit {self.digit} on {row_positions}')
@@ -151,7 +153,7 @@ class SpatialAware:
             current_column = _get_column(self.bool_position, i)
             column_positions = [j for j, val in enumerate(current_column) if val]
             if 1 == len(column_positions):
-                update_sudoku(sudoku, column_positions[0], i, str(self.digit))
+                update_sudoku(sudoku, column_positions[0], i, str(self.digit), SpatialAware.state_space)
             if 2 == len(column_positions):
                 if BLOCK_KEY_VALUE[(column_positions[0], i)][0] == BLOCK_KEY_VALUE[(column_positions[1], i)][0]:
                     print(f'Digit {self.digit}.'
@@ -180,6 +182,10 @@ class IntersectionalState:
 
     def get_intersection(self):
         return self.row_state & self.col_state & self.block_state
+
+    def set_solved(self):
+        self.row_state = self.col_state = self.block_state = set()
+        self.solved = True
 
     def __str__(self):
         if self.solved:
@@ -265,10 +271,10 @@ def show_sudoku(sudoku):
 
 
 if __name__ == '__main__':
-    s = get_sudoku_from_csv('sudoku04.csv')
+    s = get_sudoku_from_csv('sudoku05.csv')
 
-    sa_digit_list = get_spatial_awareness(s)
     sp = get_state_space(s)
+    sa_digit_list = get_spatial_awareness(s, sp)
 
     for it in range(7):
         orig_sudoku = copy.deepcopy(s)
