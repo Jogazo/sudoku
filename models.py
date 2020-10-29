@@ -61,11 +61,11 @@ class SpatialState:
             if 1 == len(row_positions):
                 # print(f'Digit {self.digit} is unique in row number {i}. Update sudoku!')
                 update_sudoku(sudoku, i, row_positions[0], str(self.digit), SpatialState.state_space)
-            elif 2 == len(row_positions):
-                if BLOCK_KEY_VALUE[(i, row_positions[0])][0] == BLOCK_KEY_VALUE[(i, row_positions[1])][0]:
-                    # print(f'Row {i}, digit {self.digit} on {row_positions}')
-                    print(f'Digit {self.digit}.'
-                          f'Check block adjacent to block: {BLOCK_KEY_VALUE[(i, row_positions[0])][0]}')
+            # elif 2 == len(row_positions):
+            #     if BLOCK_KEY_VALUE[(i, row_positions[0])][0] == BLOCK_KEY_VALUE[(i, row_positions[1])][0]:
+            #         # print(f'Row {i}, digit {self.digit} on {row_positions}')
+            #         print(f'Digit {self.digit}.'
+            #               f'Check block adjacent to block: {BLOCK_KEY_VALUE[(i, row_positions[0])][0]}')
             i += 1
 
     def is_unique_in_column(self, sudoku):
@@ -74,13 +74,39 @@ class SpatialState:
             column_positions = [j for j, val in enumerate(current_column) if val]
             if 1 == len(column_positions):
                 update_sudoku(sudoku, column_positions[0], i, str(self.digit), SpatialState.state_space)
-            if 2 == len(column_positions):
-                if BLOCK_KEY_VALUE[(column_positions[0], i)][0] == BLOCK_KEY_VALUE[(column_positions[1], i)][0]:
-                    print(f'Digit {self.digit}.'
-                          f'Check block adjacent to block: {BLOCK_KEY_VALUE[(column_positions[0], i)][0]}')
+            # if 2 == len(column_positions):
+            #     if BLOCK_KEY_VALUE[(column_positions[0], i)][0] == BLOCK_KEY_VALUE[(column_positions[1], i)][0]:
+            #         print(f'Digit {self.digit}.'
+            #               f'Check block adjacent to block: {BLOCK_KEY_VALUE[(column_positions[0], i)][0]}')
 
-    def is_unique_in_block(self, sudoku):
-        pass
+    def check_adjacent_horizontal_blocks(self, sudoku):
+        for i in range(1, 10, 3):
+            top_middle_bottom = list()
+            for jj in range(3):
+                current_block = get_block(sudoku, i+jj)
+                current_bool_block = get_block(self.bool_position, i+jj)
+                if self._block_has_digit(current_block):
+                    # print(f'Block {i+jj} BREAK!!!')
+                    break
+                else:
+                    top_middle_bottom.append(self._horizontal_position_in_block(current_bool_block))
+            if 3 == len(top_middle_bottom):
+                print(f'Digit {self.digit}, adjacent horizontal block number {i}')
+                [print(elt) for elt in top_middle_bottom]
+
+    def _horizontal_position_in_block(self, block):
+        # print('TOP', block[0], sum(block[0]))
+        # print('MIDDLE', block[1], sum(block[1]))
+        # print('BOTTOM', block[2], sum(block[2]))
+        return (bool(sum(block[0])), bool(sum(block[1])), bool(sum(block[2])))
+
+    def _block_has_digit(self, block):
+        temp_ = False
+
+        for row in block:
+            temp_ = temp_ or str(self.digit) in row
+
+        return temp_
 
     def check_spatial_awareness(self, sudoku):
         self.update_spaw_row(sudoku)
@@ -90,7 +116,7 @@ class SpatialState:
 
         self.is_unique_in_row(sudoku)
         self.is_unique_in_column(sudoku)
-        self.is_unique_in_block(sudoku)
+        self.check_adjacent_horizontal_blocks(sudoku)
 
 
 class IntersectionalState:
