@@ -2,7 +2,7 @@
 import copy
 
 from models import SpatialState, IntersectionalState
-from utils import get_sudoku_from_csv, PLOT_DIGIT_SPACES, print_set_as_9char_string, update_sudoku
+from utils import get_sudoku_from_csv, positive_update_sudoku, show_sudoku_as_state_space
 
 
 def get_state_space(sudoku):
@@ -27,7 +27,8 @@ def state_space_to_sudoku(state_space, sudoku):
     for row in range(9):
         for col in range(9):
             if 1 == len(state_space[row][col].get_intersection()):
-                update_sudoku(sudoku, row, col, str(state_space[row][col].get_intersection().pop()), state_space)
+                positive_update_sudoku(sudoku, row, col,
+                                       str(state_space[row][col].get_intersection().pop()), state_space)
 
 
 def update_state_space(sudoku, state_space):
@@ -56,22 +57,6 @@ def get_spatial_awareness(sudoku, state_space):
     return sp_awareness
 
 
-def show_sudoku_as_state_space(sudoku, state_space):
-    print('-' * 90)
-    for row in range(9):
-        to_show = ''
-        for col in range(9):
-            if sudoku[row][col]:
-                to_show += f'{PLOT_DIGIT_SPACES[sudoku[row][col]]}|'
-            else:
-                as_9char_string = print_set_as_9char_string(state_space[row][col].get_intersection())
-                to_show += f'{as_9char_string}|'
-
-        print(to_show)
-        if 2 == row % 3:
-            print('-'*90)
-
-
 def show_sudoku(sudoku):
     print('-' * 12)
     for row in range(9):
@@ -91,7 +76,7 @@ def show_sudoku(sudoku):
 
 
 if __name__ == '__main__':
-    s = get_sudoku_from_csv('sudoku05.csv')
+    s = get_sudoku_from_csv('sudoku02.csv')
 
     sp = get_state_space(s)
     sa_digit_list = get_spatial_awareness(s, sp)

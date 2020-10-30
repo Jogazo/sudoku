@@ -12,10 +12,34 @@ def get_sudoku_from_csv(file_name):
     return sudoku
 
 
-def update_sudoku(sudoku, row, column, value, state_space):
+def positive_update_sudoku(sudoku, row, column, value, state_space):
+    value = str(value)
     state_space[row][column].set_solved()
     sudoku[row][column] = value
     print(f'==== ({row},{column}): {value}')
+
+
+def negative_update_sudoku(sudoku, row, column, value, state_space):
+    state_space[row][column].row_state.remove(int(value))
+    state_space[row][column].col_state.remove(int(value))
+    state_space[row][column].block_state.remove(int(value))
+    print(f'==== ({row},{column}): CANNOT HAVE {value}')
+
+
+def show_sudoku_as_state_space(sudoku, state_space):
+    print('-' * 90)
+    for row in range(9):
+        to_show = ''
+        for col in range(9):
+            if sudoku[row][col]:
+                to_show += f'{PLOT_DIGIT_SPACES[sudoku[row][col]]}|'
+            else:
+                as_9char_string = print_set_as_9char_string(state_space[row][col].get_intersection())
+                to_show += f'{as_9char_string}|'
+
+        print(to_show)
+        if 2 == row % 3:
+            print('-'*90)
 
 
 def get_block(nine_by_nine, block_number):
@@ -29,6 +53,15 @@ def get_block(nine_by_nine, block_number):
         block.append(current_row)
 
     return block
+
+
+def transpose_3_by_3(three_by_three):
+    transposed = list()
+
+    for i in range(3):
+        transposed.append([three_by_three[0][i], three_by_three[1][i], three_by_three[2][i]])
+
+    return transposed
 
 
 def get_column_from_nine_by_nine(nine_by_nine, col_number):
