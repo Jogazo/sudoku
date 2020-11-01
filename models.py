@@ -103,23 +103,42 @@ class SpatialState:
         return row_offset + i, column_offset + index[0]
 
     def check_adjacent_horizontal_blocks(self, sudoku):
-        for i in range(1, 10, 3):
-            top_middle_bottom = list()
+        def get_horizontal_block_list(i):
+            block_list = list()
             for jj in range(3):
                 current_block = get_block(sudoku, i+jj)
-                current_bool_block = get_block(self.bool_position, i+jj)
-                if self._block_has_digit(current_block):
-                    # print(f'Block {i+jj} BREAK!!!')
-                    break
-                else:
-                    top_middle_bottom.append(self._horizontal_position_in_block(current_bool_block))
-            if 3 == len(top_middle_bottom):
-                transposed_tmb = transpose_3_by_3(top_middle_bottom)
-                for elt in transposed_tmb:
-                    if 1 == sum(elt):
-                        print(f'Digit {self.digit}, adjacent horizontal blocks number {i}.',
-                              'SpatialState: Confirm position in block. Make other rows in block impossible.',
-                              'StateSpace: remove value from other rows in block.')
+                if not self._block_has_digit(current_block):
+                    block_list.append((i+jj, current_block, get_block(self.bool_position, i+jj)))
+
+            return block_list
+
+        for i in range(1, 10, 3):
+            triple_blocks = get_horizontal_block_list(i)
+
+            if 1 == len(triple_blocks):
+                # print('Digit', self.digit, 'covered by uniqueness checks.')
+                pass
+            elif 2 == len(triple_blocks):
+                simple_set = {0, 1}
+                for block_number in range(2):
+                    if 1 == sum(self._horizontal_position_in_block(triple_blocks[block_number][2])):
+                        simple_set.remove(block_number)
+                        single_true = block_number
+
+                if 1 == len(simple_set):
+                    block_to_modify = triple_blocks[simple_set.pop()][0]
+                    row_to_modify = [j for j, val in enumerate(self._horizontal_position_in_block(triple_blocks[single_true][2])) if val]  # noqa
+                    assert 1 == len(row_to_modify)
+                    row_to_modify = row_to_modify[0]
+
+                    print(f'Digit {self.digit} set "False" for row {row_to_modify} in block {block_to_modify}.')
+                    (row_offset, col_offset) = BLOCK_NUMBER_OFFSET[block_to_modify]
+                    for cc in range(3):
+                        self.negative_update(sudoku, row_offset + row_to_modify, col_offset + cc, self.digit)
+            elif 3 == len(triple_blocks):
+                print(f'Digit {self.digit} HORIZONTAL BLOCK {i} CHECK LEN==3')
+            else:
+                assert not triple_blocks
 
     def _horizontal_position_in_block(self, block):
         return [bool(sum(block[0])), bool(sum(block[1])), bool(sum(block[2]))]
@@ -138,28 +157,32 @@ class SpatialState:
             return block_list
 
         for i in range(1, 4):
-            vert_blocks = get_vertical_block_list(i)
+            triple_blocks = get_vertical_block_list(i)
 
-            if 1 == len(vert_blocks):
+            if 1 == len(triple_blocks):
                 # print('Digit:', self.digit, 'Already covered in uniqueness checks')
                 pass
-            if 2 == len(vert_blocks):
+            elif 2 == len(triple_blocks):
                 simple_set = {0, 1}
-                for vblock_number in range(2):
-                    if 1 == sum(self._horizontal_position_in_block(vert_blocks[vblock_number][2])):
-                        simple_set.remove(vblock_number)
-                        single_true = vblock_number
+                for block_number in range(2):
+                    if 1 == sum(self._horizontal_position_in_block(triple_blocks[block_number][2])):
+                        simple_set.remove(block_number)
+                        single_true = block_number
 
                 if 1 == len(simple_set):
-                    block_to_modify = vert_blocks[simple_set.pop()][0]
-                    col_in_block_to_modify = [j for j, val in enumerate(self._horizontal_position_in_block(vert_blocks[single_true][2])) if val]  # noqa
-                    assert 1 == len(col_in_block_to_modify)
-                    col_in_block_to_modify = col_in_block_to_modify[0]
+                    block_to_modify = triple_blocks[simple_set.pop()][0]
+                    col_to_modify = [j for j, val in enumerate(self._horizontal_position_in_block(triple_blocks[single_true][2])) if val]  # noqa
+                    assert 1 == len(col_to_modify)
+                    col_to_modify = col_to_modify[0]
 
-                    print('Digit', self.digit, f'Block number {block_to_modify} become "False" on LMR position {col_in_block_to_modify}.')  # noqa
+                    print(f'Digit {self.digit} set "False" on column {col_to_modify} in block {block_to_modify}.')
                     (row_offset, col_offset) = BLOCK_NUMBER_OFFSET[block_to_modify]
                     for rr in range(3):
-                        self.negative_update(sudoku, row_offset + rr, col_offset + col_in_block_to_modify, self.digit)
+                        self.negative_update(sudoku, row_offset + rr, col_offset + col_to_modify, self.digit)
+            elif 3 == len(triple_blocks):
+                print(f'Digit {self.digit} VERTICAL BLOCK {i} CHECK LEN==3')
+            else:
+                assert not triple_blocks
 
     def negative_update(self, sudoku, row, column, value):
         self.bool_position[row][column] = False

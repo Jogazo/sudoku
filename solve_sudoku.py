@@ -95,7 +95,7 @@ if __name__ == '__main__':
             print(f'quit after iteration: {it}')
             break
 
-    # show_sudoku_as_state_space(s, sp)
+    show_sudoku_as_state_space(s, sp)
 
     # for i in range(9):
     #     print(sa_digit_list[i])
