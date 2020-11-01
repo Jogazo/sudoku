@@ -35,21 +35,15 @@ def update_state_space(sudoku, state_space):
     for row in range(9):
         for col in range(9):
             if not state_space[row][col].solved:
-                # print(state_space[row][col])
                 state_space[row][col].check_rows(sudoku, row)
                 state_space[row][col].check_columns(sudoku, col)
                 state_space[row][col].check_block(sudoku, row, col)
-                # print(state_space[row][col])
 
 
 def get_spatial_awareness(sudoku, state_space):
     sp_awareness = list()
     for i in range(1, 10):
         sp_awareness.append(SpatialState(i, state_space))
-
-    # for item in sp_awareness:
-    #     print('====')
-    #     [print(row) for row in item.bool_position]
 
     for i in range(9):
         sp_awareness[i].check_spatial_awareness(sudoku)
@@ -76,7 +70,7 @@ def show_sudoku(sudoku):
 
 
 if __name__ == '__main__':
-    s = get_sudoku_from_csv('sudoku02.csv')
+    s = get_sudoku_from_csv('sudoku_48_genius.csv')
 
     sp = get_state_space(s)
     sa_digit_list = get_spatial_awareness(s, sp)
@@ -96,7 +90,4 @@ if __name__ == '__main__':
             break
 
     show_sudoku_as_state_space(s, sp)
-
-    # for i in range(9):
-    #     print(sa_digit_list[i])
     show_sudoku(s)

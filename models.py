@@ -108,7 +108,7 @@ class SpatialState:
             for jj in range(3):
                 current_block = get_block(sudoku, i+jj)
                 if not self._block_has_digit(current_block):
-                    block_list.append((i+jj, current_block, get_block(self.bool_position, i+jj)))
+                    block_list.append((i+jj, get_block(self.bool_position, i+jj)))
 
             return block_list
 
@@ -121,13 +121,13 @@ class SpatialState:
             elif 2 == len(triple_blocks):
                 simple_set = {0, 1}
                 for block_number in range(2):
-                    if 1 == sum(self._horizontal_position_in_block(triple_blocks[block_number][2])):
+                    if 1 == sum(self._horizontal_position_in_block(triple_blocks[block_number][1])):
                         simple_set.remove(block_number)
                         single_true = block_number
 
                 if 1 == len(simple_set):
                     block_to_modify = triple_blocks[simple_set.pop()][0]
-                    row_to_modify = [j for j, val in enumerate(self._horizontal_position_in_block(triple_blocks[single_true][2])) if val]  # noqa
+                    row_to_modify = [j for j, val in enumerate(self._horizontal_position_in_block(triple_blocks[single_true][1])) if val]  # noqa
                     assert 1 == len(row_to_modify)
                     row_to_modify = row_to_modify[0]
 
@@ -136,7 +136,25 @@ class SpatialState:
                     for cc in range(3):
                         self.negative_update(sudoku, row_offset + row_to_modify, col_offset + cc, self.digit)
             elif 3 == len(triple_blocks):
-                print(f'Digit {self.digit} HORIZONTAL BLOCK {i} CHECK LEN==3')
+                tmb_list = list()
+                for t in triple_blocks:
+                    tmb_list.append(self._horizontal_position_in_block(t[1]))
+
+                block_set = {0, 1, 2}
+                for j in range(3):
+                    if 1 == sum(tmb_list[j]):
+                        block_set.remove(j)
+                        true_row_position = [k for k, val in enumerate(tmb_list[j]) if val]
+                        assert 1 == len(true_row_position)
+                        true_row_position = true_row_position[0]
+
+                if 2 == len(block_set):
+                    print(f'Digit {self.digit} block {i}. Set False on blocks {block_set} row {true_row_position}')
+
+                    for bb in block_set:
+                        (row_offset, col_offset) = BLOCK_NUMBER_OFFSET[bb+i]
+                        for cc in range(3):
+                            self.negative_update(sudoku, true_row_position+row_offset, cc+col_offset, self.digit)
             else:
                 assert not triple_blocks
 
@@ -180,7 +198,26 @@ class SpatialState:
                     for rr in range(3):
                         self.negative_update(sudoku, row_offset + rr, col_offset + col_to_modify, self.digit)
             elif 3 == len(triple_blocks):
-                print(f'Digit {self.digit} VERTICAL BLOCK {i} CHECK LEN==3')
+                lmr_list = list()
+                for t in triple_blocks:
+                    lmr_list.append(self._horizontal_position_in_block(t[2]))
+                transposed_lmr_list = transpose_3_by_3(lmr_list)
+
+                col_set = {0, 1, 2}
+                for j in range(3):
+                    if 1 == sum(transposed_lmr_list[j]):
+                        col_set.remove(j)
+                        true_position = [j for j, val in enumerate(transposed_lmr_list[j]) if val]
+                        assert 1 == len(true_position)
+                        true_position = true_position[0]
+                        block_to_modify = triple_blocks[true_position][0]
+
+                if 2 == len(col_set):
+                    print(f'Digit {self.digit}. Block number {block_to_modify} set columns {col_set} to False')
+                    (row_offset, col_offset) = BLOCK_NUMBER_OFFSET[block_to_modify]
+                    for current_col in col_set:
+                        for rr in range(3):
+                            self.negative_update(sudoku, row_offset+rr, current_col+col_offset, self.digit)
             else:
                 assert not triple_blocks
 

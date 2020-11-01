@@ -20,9 +20,21 @@ def positive_update_sudoku(sudoku, row, column, value, state_space):
 
 
 def negative_update_sudoku(sudoku, row, column, value, state_space):
-    state_space[row][column].row_state.remove(int(value))
-    state_space[row][column].col_state.remove(int(value))
-    state_space[row][column].block_state.remove(int(value))
+    try:
+        state_space[row][column].row_state.remove(int(value))
+    except KeyError:  # element no longer in set
+        pass
+
+    try:
+        state_space[row][column].col_state.remove(int(value))
+    except KeyError:  # element no longer in set
+        pass
+
+    try:
+        state_space[row][column].block_state.remove(int(value))
+    except KeyError:  # element no longer in set
+        pass
+
     print(f'==== ({row},{column}): CANNOT HAVE {value}')
 
 
