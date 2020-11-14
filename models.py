@@ -201,13 +201,12 @@ class SpatialState:
                 lmr_list = list()
                 for t in triple_blocks:
                     lmr_list.append(self._horizontal_position_in_block(t[2]))
-                transposed_lmr_list = transpose_3_by_3(lmr_list)
 
                 col_set = {0, 1, 2}
                 for j in range(3):
-                    if 1 == sum(transposed_lmr_list[j]):
+                    if 1 == sum(lmr_list[j]):
                         col_set.remove(j)
-                        true_position = [j for j, val in enumerate(transposed_lmr_list[j]) if val]
+                        true_position = [j for j, val in enumerate(lmr_list[j]) if val]
                         assert 1 == len(true_position)
                         true_position = true_position[0]
                         block_to_modify = triple_blocks[true_position][0]
