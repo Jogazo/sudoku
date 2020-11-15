@@ -1,8 +1,12 @@
 #!/usr/bin/python3
 import copy
+from argparse import ArgumentParser
 
 from models import SpatialState, IntersectionalState
 from utils import get_sudoku_from_csv, positive_update_sudoku, show_sudoku_as_state_space
+
+
+NUMBER_OF_ITERATIONS = 9 
 
 
 def get_state_space(sudoku):
@@ -69,13 +73,25 @@ def show_sudoku(sudoku):
             print('-'*12)
 
 
+def parse_arguments():
+    parser = ArgumentParser(description='Creates a test user and test data on a test environment')
+    parser.add_argument('-csv_file', action='store', required=True,
+                        help='CSV file name which contains 1 sudoku in its first nine rows and columns.')
+    parser.add_argument('-json_file',
+                        default=None,
+                        help='A JSON file with a list of sudokus.')
+
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    s = get_sudoku_from_csv('sudoku_48_genius.csv')
+    args = parse_arguments()
+    s = get_sudoku_from_csv(args.csv_file)
 
     sp = get_state_space(s)
     sa_digit_list = get_spatial_awareness(s, sp)
 
-    for it in range(7):
+    for it in range(NUMBER_OF_ITERATIONS):
         orig_sudoku = copy.deepcopy(s)
         print(f'iteration {it}')
 
